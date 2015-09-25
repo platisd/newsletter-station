@@ -37,7 +37,7 @@ boolean postString(const String userInput) {
     if (DEBUG) Serial.print("RECEIVED: Error");
     lcd.setCursor(0, 1);
     lcd.print("Module error");
-    delay(1500);
+    delay(MSG_WAIT_TIME);
     clearLine(1);
     return false;
   }
@@ -57,13 +57,13 @@ boolean postString(const String userInput) {
     if (DEBUG) Serial.println("RECEIVED: OK");
     lcd.setCursor(0, 1);
     lcd.print("Email submitted!");
-    delay(1500);
+    delay(MSG_WAIT_TIME);
     return true;
   } else {
     if (DEBUG) Serial.println("RECEIVED: Error");
     lcd.setCursor(0, 1);
     lcd.print("Server error");
-    delay(1500);
+    delay(MSG_WAIT_TIME);
     return false;
   }
 }
@@ -76,13 +76,13 @@ boolean validIP() {
     String ip = ESP8266.readStringUntil('"'); //parse the IP
     if (ip.equals("0.0.0.0")) {
       lcd.print("Failed-Retrying");
-      delay(1500);
+      delay(MSG_WAIT_TIME);
       return false; //IP 0.0.0.0 means that there is no connection made
     }
     lcd.print(ip); //display the ip
     if (DEBUG) Serial.print("IP: ");
     if (DEBUG) Serial.println(IP);
-    delay(1500);
+    delay(MSG_WAIT_TIME);
     return true;
   } else {
     if (DEBUG) Serial.println("ERROR no CIPSTA response");
@@ -93,6 +93,6 @@ boolean validIP() {
     if (DEBUG) Serial.println("OK not found"); //something isn't working as it should
   }
   lcd.print("Failed-Retrying");
-  delay(1500);
+  delay(MSG_WAIT_TIME);
   return false;
 }

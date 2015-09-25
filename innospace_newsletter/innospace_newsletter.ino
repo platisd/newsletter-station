@@ -5,6 +5,7 @@
 #include <SoftwareSerial.h>
 #include "Vars.h"
 
+/* LCD screen declarations */
 #define I2C_ADDR 0x3F // I2C address for the green 16x2 LCD screen (0x27 is the address of the blue i2c screen)
 #define BACKLIGHT_PIN     3
 #define En_pin  2
@@ -15,15 +16,18 @@
 #define D6_pin  6
 #define D7_pin  7
 
-/* LCD screen declarations */
 LiquidCrystal_I2C  lcd(I2C_ADDR, En_pin, Rw_pin, Rs_pin, D4_pin, D5_pin, D6_pin, D7_pin);
 unsigned short index = 0;
 const unsigned short LCD_LENGTH = 16;
 const unsigned short LCD_HEIGHT = 2;
+const unsigned long SCREEN_TIMEOUT = 90000; //in milliseconds
+unsigned long lastKeyStroke = 0;
+boolean screenOn = true;
+const unsigned short MSG_WAIT_TIME = 1500; //the time that messages will be displayed on the screen
 
 /* keyboard declarations */
-const int DataPin = 4;
-const int IRQpin =  3;
+const unsigned short DataPin = 4;
+const unsigned short IRQpin =  3;
 PS2Keyboard keyboard;
 
 /* email input declarations */
@@ -32,19 +36,21 @@ char verificationInput = 'x'; //initialize it with 'x' value, so we know when it
 
 State state = EMAIL_INPUT;
 const unsigned short ARROW_STEP = 3; //how many characters will the displayed word be shifted upon button press
-unsigned short rightIndex = 0;
-unsigned short leftIndex = 0;
-const unsigned short MAX_EMAIL_LENGTH = 50;
+unsigned short rightIndex = 0; //the rightmost index of the user email that will be displayed on the screen
+unsigned short leftIndex = 0; //the leftmost index of the user email that will be displayed on the screen
+const unsigned short MAX_EMAIL_LENGTH = 50; //the maximum amount of characters an email could contain
 
 /* ESP2688 wifi module declarations */
 #define SSID "YOUR_WIFI_NETWORK" //your SSID
 #define PASS "YOUR_WIFI_PASSWORD" //your wifi password
 #define IP "184.106.153.149" // thingspeak.com IP address
 String GET = "GET /update?key=YOUR_CHANNEL_ID&field1="; //get request url
-SoftwareSerial ESP8266(10, 11); // RX, TX
-const unsigned short DEBUG = ON; //debug information on Serial
+const unsigned short RX_PIN = 12;
+const unsigned short TX_PIN = 9;
+SoftwareSerial ESP8266(RX_PIN, TX_PIN); // RX, TX
+const unsigned short DEBUG = OFF; //debug information on Serial
 boolean bootError = false;
-const unsigned short MAX_VALIDATION_EFFORTS = 5; //max ammount of efforts to try and reconnect to the network if you have failed in setup()
+const unsigned short MAX_VALIDATION_EFFORTS = 5; //max amount of efforts to try and reconnect to the network if you have failed in setup()
 
 void setup() {
   keyboard.begin(DataPin, IRQpin);
@@ -96,7 +102,7 @@ void setup() {
         lcd.print("Configuring WiFi");
         connectWiFi();
       }
-    } while (bootError && efforts < MAX_VALIDATION_EFFORTS); //keep trying until you have reached the MAX_EFFORTS or there is no bootError
+    } while (bootError && (efforts < MAX_VALIDATION_EFFORTS)); //keep trying until you have reached the MAX_EFFORTS or there is no bootError
     if (!bootError) { //if there is still no error, you are good to go
       lcd.clear();
       lcd.setCursor(0, 0);
@@ -109,12 +115,21 @@ void setup() {
       lcd.print("Check WiFi");
     }
   }
+  lastKeyStroke = millis(); //start considering keystrokes as soon as setup() is finished
 }
 
 void loop() {
-  if (bootError) return;
+  if (bootError) return; //if there is a boot error, don't do anything, just display the error encountered during setup()
+  if (screenOn && (millis() > lastKeyStroke + SCREEN_TIMEOUT)) { //if the screen is ON, then check whether the last key stroke occured more than SCREEN_TIMEOUT milliseconds ago
+    screenOn = false;
+    lcd.setBacklight(LOW); //turn the screen's backlight off to decrease power consumption
+  }
   if (keyboard.available()) {
-    lcd.setCursor(0, 1);
+    lastKeyStroke = millis(); //record when keyboard was used last
+    if (!screenOn) { //if screen is off, then since a keystroke it should be turned on again
+      screenOn = true;
+      lcd.setBacklight(HIGH); //turn the screen's backlight on, as there is an active user
+    }
     char c = keyboard.read();
     if (c == PS2_ENTER) { //when ENTER is pressed
       switch (state) {
@@ -150,9 +165,13 @@ void loop() {
                 rightIndex = 0;
                 leftIndex = 0;
                 userEmail = "";
-                lcd.setCursor(0, 0);
+                lcd.clear(); //let's leave a thank you message as well
+                lcd.setCursor(0,1);
+                lcd.print("Thank you!");
+                delay(MSG_WAIT_TIME);
+                lcd.setCursor(0, 0);  //now go back to the first EMAIL_INPUT screen
+                lcd.clear(); //let's clear the screen, so a new email can be submitted
                 lcd.print("Enter your email");
-                clearLine(1); //clear the email line so a new one can be submitted
               } else { //if something went wrong, remain in the EMAIL_VERIFICATION state
                 unsigned short wordLength = userEmail.length();
                 lcd.clear();
@@ -170,7 +189,7 @@ void loop() {
             } else { //if email is not valid
               clearLine(0); //clear what is on the first line
               lcd.print("Invalid email");
-              delay(1500);
+              delay(MSG_WAIT_TIME);
               clearLine(0);
               lcd.print("Submit (y/n):");
             }
@@ -257,6 +276,7 @@ void loop() {
           {
             unsigned short wordLength = userEmail.length();
             if (wordLength < MAX_EMAIL_LENGTH) { //don't accept words larger than MAX_EMAIL_LENGTH characters, too big to be email
+
               userEmail += c; //concat the new character
               wordLength++; //our userEmail just became one digit longer
               printEmail(wordLength);
@@ -307,7 +327,7 @@ boolean emailValid(const String userEmail) {
   if (atIndex <= 0) return false; //if we don't have an '@' or it only exists as the first character
   short dotIndex = userEmail.lastIndexOf('.');
   if ((dotIndex <= 3) || (dotIndex > wordLength - 3) ) return false; //if the last occurence of '.' is not too early or does not exist or is in the very end
-  if (atIndex > dotIndex) return false; //if the last '@' is after the last '.'
+  if (atIndex > dotIndex - 3) return false; //if the last '@' is after the last '.' or it does not leave space for a 2 digit domain name
   return true;
 }
 
