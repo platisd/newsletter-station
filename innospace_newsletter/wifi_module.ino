@@ -1,4 +1,8 @@
 /* based on Instructables tutorial: http://plat.is/opuw2 */
+#define SSID "YOUR_WIFI_NETWORK" //your SSID
+#define PASS "YOUR_WIFI_PASSWORD" //your wifi password
+#define IP "184.106.153.149" // thingspeak.com IP address
+String GET = "GET /update?key=YOUR_CHANNEL_ID&field1="; //GET request url
 
 void sendCommand(String cmd) {
   if (DEBUG) {
@@ -57,6 +61,56 @@ boolean postString(const String userInput) {
     if (DEBUG) Serial.println("RECEIVED: OK");
     lcd.setCursor(0, 1);
     lcd.print("Email submitted!");
+    delay(MSG_WAIT_TIME);
+    return true;
+  } else {
+    if (DEBUG) Serial.println("RECEIVED: Error");
+    lcd.setCursor(0, 1);
+    lcd.print("Server error");
+    delay(MSG_WAIT_TIME);
+    return false;
+  }
+}
+
+boolean postTweet(String tweet) {
+  String cmd = "AT+CIPSTART=\"TCP\",\"";
+  cmd += IP;
+  cmd += "\",80";
+  sendCommand(cmd);
+  loadAnimation(2000);
+  if (ESP8266.find("Error")) {
+    if (DEBUG) Serial.print("RECEIVED: Error");
+    lcd.setCursor(0, 1);
+    lcd.print("Module error");
+    delay(MSG_WAIT_TIME);
+    clearLine(1);
+    return false;
+  }
+  String tweetData = "api_key=YOUR_THINGTWEET_API";
+  tweetData += "&status=";
+  tweetData += tweet;
+  cmd = "POST /apps/thingtweet/1/statuses/update HTTP/1.1\n";
+  cmd += "Host: api.thingspeak.com\n";
+  cmd += "Connection: close\n";
+  cmd += "Content-Type: application/x-www-form-urlencoded\n";
+  cmd += "Content-Length: ";
+  cmd += tweetData.length();
+  cmd += "\n\n";
+  cmd += tweetData;
+  cmd += "\r\n";
+  ESP8266.print("AT+CIPSEND=");
+  ESP8266.println(cmd.length());
+  if (ESP8266.find(">")) {
+    if (DEBUG) Serial.print(">");
+    if (DEBUG) Serial.print(cmd);
+    ESP8266.print(cmd);
+  } else {
+    sendCommand("AT+CIPCLOSE");
+  }
+  if (ESP8266.find("OK")) {
+    if (DEBUG) Serial.println("RECEIVED: OK");
+    lcd.setCursor(0, 1);
+    lcd.print("Tweet posted!"); //atm we do not verify if the tweet was actually posted
     delay(MSG_WAIT_TIME);
     return true;
   } else {

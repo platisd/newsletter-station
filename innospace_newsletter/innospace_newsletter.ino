@@ -41,10 +41,6 @@ unsigned short leftIndex = 0; //the leftmost index of the user email that will b
 const unsigned short MAX_EMAIL_LENGTH = 50; //the maximum amount of characters an email could contain
 
 /* ESP2688 wifi module declarations */
-#define SSID "YOUR_WIFI_NETWORK" //your SSID
-#define PASS "YOUR_WIFI_PASSWORD" //your wifi password
-#define IP "184.106.153.149" // thingspeak.com IP address
-String GET = "GET /update?key=YOUR_CHANNEL_ID&field1="; //get request url
 const unsigned short RX_PIN = 12;
 const unsigned short TX_PIN = 9;
 SoftwareSerial ESP8266(RX_PIN, TX_PIN); // RX, TX
@@ -94,15 +90,14 @@ void setup() {
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("Validating WiFi");
-      bootError = !validIP();
-      efforts++;
+      bootError = !validIP(); //check whether the wifi module has received a valid IP address in the network
       if (bootError) {  //if you failed getting an IP, try to connect again before checking again for an IP
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Configuring WiFi");
         connectWiFi();
       }
-    } while (bootError && (efforts < MAX_VALIDATION_EFFORTS)); //keep trying until you have reached the MAX_EFFORTS or there is no bootError
+    } while (bootError && (++efforts < MAX_VALIDATION_EFFORTS)); //keep trying until you have reached the MAX_EFFORTS or there is no bootError, while increasing efforts each time
     if (!bootError) { //if there is still no error, you are good to go
       lcd.clear();
       lcd.setCursor(0, 0);
