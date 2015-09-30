@@ -4,6 +4,7 @@
 #include <PS2Keyboard.h>
 #include <SoftwareSerial.h>
 #include "Vars.h"
+#include <Smartcar_sensors.h>
 
 /* LCD screen declarations */
 #define I2C_ADDR 0x3F // I2C address for the green 16x2 LCD screen (0x27 is the address of the blue i2c screen)
@@ -47,6 +48,15 @@ SoftwareSerial ESP8266(RX_PIN, TX_PIN); // RX, TX
 const unsigned short DEBUG = OFF; //debug information on Serial
 boolean bootError = false;
 const unsigned short MAX_VALIDATION_EFFORTS = 5; //max amount of efforts to try and reconnect to the network if you have failed in setup()
+
+/* Sonar (presence detection) declarations */
+Sonar sonar;
+const unsigned short TRIG_PIN = A2; //ultrasonic sensor's trigger pin
+const unsigned short ECHO_PIN = A1; //ultrasonic sensor's echo pin
+const unsigned short US_VCC = A3; //the pin that will provide the voltage to the ultrasonic sensor
+const unsigned short US_GROUND = A0; //pin that will provide ground to the ultrasonic sensor
+unsigned long lastMeasurement = 0;
+const unsigned short US_INTERVAL = 100; //frequency in milliseconds of measurements by the ultrasonic sensor
 
 void setup() {
   keyboard.begin(DataPin, IRQpin);
@@ -110,7 +120,14 @@ void setup() {
       lcd.print("Check WiFi");
     }
   }
-  lastKeyStroke = millis(); //start considering keystrokes as soon as setup() is finished
+  if (!bootError) { //if there is no error during boot, initialize the ultrasonic sensor and the keystrokes
+    pinMode(US_GROUND, OUTPUT); //be careful here not to cause reverse connection of power and ground
+    pinMode(US_VCC, OUTPUT);
+    digitalWrite(US_GROUND, LOW);
+    digitalWrite(US_VCC, HIGH);
+    sonar.attach(TRIG_PIN, ECHO_PIN); //initialize the presence detecting ultrasonic sensor (SR04)
+    lastKeyStroke = millis(); //start considering keystrokes as soon as setup() is finished
+  }
 }
 
 void loop() {
@@ -118,6 +135,14 @@ void loop() {
   if (screenOn && (millis() > lastKeyStroke + SCREEN_TIMEOUT)) { //if the screen is ON, then check whether the last key stroke occured more than SCREEN_TIMEOUT milliseconds ago
     screenOn = false;
     lcd.setBacklight(LOW); //turn the screen's backlight off to decrease power consumption
+  }
+  if (!screenOn && (millis() > lastMeasurement + US_INTERVAL)) {
+    if (sonar.getMedianDistance()) { //if something was detected, turn the screen on, use median distance, so to filter out false positive results
+      screenOn = true;
+      lcd.setBacklight(HIGH);
+      lastKeyStroke = millis(); //pretend there was a keystroke, so the screen will stay on for some time, after detecting movement
+    }
+    lastMeasurement = millis();
   }
   if (keyboard.available()) {
     lastKeyStroke = millis(); //record when keyboard was used last
@@ -161,7 +186,7 @@ void loop() {
                 leftIndex = 0;
                 userEmail = "";
                 lcd.clear(); //let's leave a thank you message as well
-                lcd.setCursor(0,1);
+                lcd.setCursor(0, 1);
                 lcd.print("Thank you!");
                 delay(MSG_WAIT_TIME);
                 lcd.setCursor(0, 0);  //now go back to the first EMAIL_INPUT screen
