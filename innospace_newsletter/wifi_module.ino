@@ -3,7 +3,7 @@
 #define PASS "YOUR_WIFI_PASSWORD" //your wifi password
 #define IP "184.106.153.149" // thingspeak.com IP address
 String GET = "GET /update?key=YOUR_CHANNEL_ID&field1="; //GET request url
-String API_KEY = "YOUR_API_KEY";
+String API_KEY = "YOUR_API_KEY"; //your thingtweet API key
 
 void sendCommand(String cmd) {
   if (DEBUG) {
