@@ -73,7 +73,7 @@ boolean postString(const String userInput) {
   }
 }
 
-boolean postTweet(String tweet) {
+boolean postTweet(String tweet) { //tweet using Thingspeak.com's Thingtweet app
   String cmd = "AT+CIPSTART=\"TCP\",\"";
   cmd += IP;
   cmd += "\",80";
