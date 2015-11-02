@@ -1,4 +1,5 @@
-/* based on Instructables tutorial: http://plat.is/opuw2 */
+/* based on Instructables tutorial: http://plat.is/opuw2 
+* For ESP8266 AT commands, please refer to the datasheet: http://wiki.iteadstudio.com/ESP8266_Serial_WIFI_Module#AT_Commands */
 #define SSID "YOUR_WIFI_NETWORK" //your SSID
 #define PASS "YOUR_WIFI_PASSWORD" //your wifi password
 #define IP "184.106.153.149" // thingspeak.com IP address

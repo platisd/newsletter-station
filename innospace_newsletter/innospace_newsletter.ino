@@ -67,14 +67,14 @@ void setup() {
   lcd.print("Locating ESP8266");
   if (DEBUG) Serial.begin(9600);
   ESP8266.begin(9600);
-  sendCommand("AT");
+  sendCommand("AT"); //send AT command to check if the module responds
   loadAnimation(5000); //show something pretty while we wait for the wifi module to boot
   if (ESP8266.find("OK")) {
     if (DEBUG) Serial.println("RECEIVED: OK");
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Configuring WiFi");
-    bootError = !connectWiFi();
+    bootError = !connectWiFi(); //try to connect to the wifi network
     if (bootError) {
       lcd.clear();
       lcd.setCursor(0, 0);
@@ -122,7 +122,7 @@ void setup() {
   }
   if (!bootError) { //if there is no error during boot, initialize the ultrasonic sensor and the keystrokes
     pinMode(US_GROUND, OUTPUT); //be careful here not to cause reverse connection of power and ground
-    pinMode(US_VCC, OUTPUT);
+    pinMode(US_VCC, OUTPUT); //we use common digital pins for giving power and ground to the ultrasonic sensor
     digitalWrite(US_GROUND, LOW);
     digitalWrite(US_VCC, HIGH);
     sonar.attach(TRIG_PIN, ECHO_PIN); //initialize the presence detecting ultrasonic sensor (SR04)
@@ -327,10 +327,10 @@ void printEmail(const unsigned short wordLength) {
 void clearLine(const unsigned short line) {
   lcd.setCursor(0, line);
   lcd.print("                "); //print a blank line
-  lcd.setCursor(0, line);
+  lcd.setCursor(0, line); //put the cursor back in the beginning
 }
 
-void loadAnimation(const unsigned short millisToWait) {
+void loadAnimation(const unsigned short millisToWait) { //display moving dots while waiting, depending on the amount of time to be waited
   clearLine(1);
   unsigned short millisDelay = millisToWait / LCD_LENGTH;
   for (int i = 0; i < LCD_LENGTH; i++) {
@@ -340,7 +340,7 @@ void loadAnimation(const unsigned short millisToWait) {
   clearLine(1);
 }
 
-boolean emailValid(const String userEmail) {
+boolean emailValid(const String userEmail) { //validate the user's email, based on some common rules
   unsigned short wordLength = userEmail.length();
   if (wordLength < 7) return false; //can't have something smaller than a@bc.de
   short atIndex = userEmail.lastIndexOf('@');
