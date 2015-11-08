@@ -1,5 +1,4 @@
 #include <Wire.h>
-#include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 #include <PS2Keyboard.h>
 #include <SoftwareSerial.h>
