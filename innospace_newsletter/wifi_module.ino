@@ -6,6 +6,7 @@
 String GET = "GET /update?key=YOUR_CHANNEL_ID&field1="; //GET request url
 String API_KEY = "YOUR_API_KEY"; //your thingtweet API key
 
+/* sends the raw AT command to the WiFi module */
 void sendCommand(String cmd) {
   if (DEBUG) {
     Serial.print("SEND: ");
@@ -14,6 +15,7 @@ void sendCommand(String cmd) {
   ESP8266.println(cmd);
 }
 
+/* commands the wifi module to connect to the specified wifi network */
 boolean connectWiFi() {
   ESP8266.println("AT+CWMODE=1");
   loadAnimation(2000);
@@ -33,6 +35,7 @@ boolean connectWiFi() {
   }
 }
 
+/* post the specified string, with a GET request */
 boolean postString(const String userInput) {
   String cmd = "AT+CIPSTART=\"TCP\",\"";
   cmd += IP;
@@ -74,7 +77,8 @@ boolean postString(const String userInput) {
   }
 }
 
-boolean postTweet(String tweet) { //tweet using Thingspeak.com's Thingtweet app
+/* posts the specified tweet, with a post request, using Thingspeak.com's Thingtweet app */
+boolean postTweet(String tweet) {
   String cmd = "AT+CIPSTART=\"TCP\",\"";
   cmd += IP;
   cmd += "\",80";
@@ -125,6 +129,7 @@ boolean postTweet(String tweet) { //tweet using Thingspeak.com's Thingtweet app
   }
 }
 
+/* evaluates whether we are really connected to the WiFi network, by checking to see if we have got an IP */
 boolean validIP() {
   lcd.setCursor(0, 1);
   loadAnimation(5000); //wait otherwise will be getting busy errors

@@ -314,6 +314,7 @@ void loop() {
   }
 }
 
+/* prints out the user's email on the second line of the screen */
 void printEmail(const unsigned short wordLength) {
   lcd.setCursor(0, 1);
   if (wordLength <= LCD_LENGTH) {//if the word is shorter than the LCD length, just print it out
@@ -323,13 +324,15 @@ void printEmail(const unsigned short wordLength) {
   }
 }
 
+/* clears out the specified line, by writing a blank line over it */
 void clearLine(const unsigned short line) {
   lcd.setCursor(0, line);
   lcd.print("                "); //print a blank line
   lcd.setCursor(0, line); //put the cursor back in the beginning
 }
 
-void loadAnimation(const unsigned short millisToWait) { //display moving dots while waiting, depending on the amount of time to be waited
+/* displays moving dots while waiting, depending on the amount of time to be waited */
+void loadAnimation(const unsigned short millisToWait) {
   clearLine(1);
   unsigned short millisDelay = millisToWait / LCD_LENGTH;
   for (int i = 0; i < LCD_LENGTH; i++) {
@@ -339,7 +342,8 @@ void loadAnimation(const unsigned short millisToWait) { //display moving dots wh
   clearLine(1);
 }
 
-boolean emailValid(const String userEmail) { //validate the user's email, based on some common rules
+/* validates the user's email, based on some common rules */
+boolean emailValid(const String userEmail) {
   unsigned short wordLength = userEmail.length();
   if (wordLength < 7) return false; //can't have something smaller than a@bc.de
   short atIndex = userEmail.lastIndexOf('@');
@@ -350,6 +354,7 @@ boolean emailValid(const String userEmail) { //validate the user's email, based 
   return true;
 }
 
+/* submits the email to be sent over wifi */
 boolean submitEmail(const String userEmail) {
   if (DEBUG) Serial.println(userEmail);
   return postString(userEmail);
